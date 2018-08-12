@@ -76,13 +76,13 @@ class TxStore {
     console.log('slice', slice, addresses_to_send[0], balances_to_send[0], addPerTx)
     const web3 = this.web3Store.web3;
     const multisender = new web3.eth.Contract(MultiSenderAbi, proxyMultiSenderAddress);
-
+console.log(currentFee);
     try {
       let encodedData = await multisender.methods.multisendToken(token_address, addresses_to_send, balances_to_send).encodeABI({from: this.web3Store.defaultAccount})
       let gas = await web3.eth.estimateGas({
           from: this.web3Store.defaultAccount,
           data: encodedData,
-          value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+          value: Web3Utils.toHex(web3.utils.toWei(currentFee, 'ether')),
           to: proxyMultiSenderAddress
       })
       console.log('gas', gas)
@@ -91,7 +91,7 @@ class TxStore {
         from: this.web3Store.defaultAccount,
         gasPrice: this.gasPriceStore.standardInHex,
         gas: Web3Utils.toHex(gas + 150000),
-        value: Web3Utils.toHex(Web3Utils.toWei(ethValue.toString())),
+        value: Web3Utils.toHex(web3.utils.toWei(currentFee, 'ether')),
       })
 
       .on('transactionHash', (hash) => {
@@ -133,14 +133,14 @@ class TxStore {
       const web3 = this.web3Store.web3;
       web3.eth.getTransactionReceipt(hash, (error, res) => {
         if(res && res.blockNumber){
-          if(res.status === '0x1'){
+          // if(res.status === '0x1'){
             const index = this.txHashToIndex[hash]
             this.txs[index].status = `mined`
-          } else {
-            const index = this.txHashToIndex[hash]
-            this.txs[index].status = `error`
-            this.txs[index].name = `Mined but with errors. Perhaps out of gas`
-          }
+          // } else {
+          //   const index = this.txHashToIndex[hash]
+          //   this.txs[index].status = `error`
+          //   this.txs[index].name = `Mined but with errors. Perhaps out of gas`
+          // }
         } else {
           this.getTxStatus(hash)
         }
